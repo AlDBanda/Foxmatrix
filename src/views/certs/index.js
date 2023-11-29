@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Autocomplete, Grid, TextField, List, ListItem, ListItemText, Typography, Button, Alert } from '@mui/material';
 
 const Certificates = () => {
@@ -9,16 +9,19 @@ const Certificates = () => {
     const [certificateFile, setCertificateFile] = useState(null);
     const [uploadSuccess, setUploadSuccess] = useState(false);
 
+    // Fetch employees once when the component mounts
     useEffect(() => {
         fetchEmployees();
     }, []);
 
+    // Fetch employee courses whenever a new employee is selected
     useEffect(() => {
         if (selectedEmployee) {
             fetchEmployeeCourses();
         }
-    }, [selectedEmployee, fetchEmployeeCourses]);
+    }, [selectedEmployee]);
 
+    // Fetch employees from API
     const fetchEmployees = () => {
         fetch('https://glowing-paradise-cfe00f2697.strapiapp.com/api/employees')
             .then((response) => response.json())
@@ -29,24 +32,29 @@ const Certificates = () => {
                     ...employee.attributes
                 }));
                 setEmployees(formattedEmployees);
-            });
+            })
+            .catch((error) => console.error('Error fetching employees:', error));
     };
 
-    const fetchEmployeeCourses = React.useCallback(() => {
+    // Fetch courses of the selected employee from API
+    const fetchEmployeeCourses = useCallback(() => {
         fetch(
             `https://glowing-paradise-cfe00f2697.strapiapp.com/api/employee-courses?filters[employee][id][$eq]=${selectedEmployee.id}&populate[course]=name`
         )
             .then((response) => response.json())
             .then((data) => {
                 setEmployeeCourses(data.data);
-            });
+            })
+            .catch((error) => console.error('Error fetching employee courses:', error));
     }, [selectedEmployee]);
 
+    // Handle file input change event
     const handleCertificateUpload = (event) => {
         const file = event.target.files[0];
         setCertificateFile(file);
     };
 
+    // Handle certificate submission
     const handleCertificateSubmit = () => {
         if (selectedCourse && certificateFile) {
             const formData = new FormData();
@@ -70,7 +78,6 @@ const Certificates = () => {
                     setTimeout(() => {
                         setUploadSuccess(false);
                     }, 3000);
-                    // Optionally, you can refresh the employee courses
                 })
                 .catch((error) => {
                     console.error('Error uploading certificate:', error);
@@ -90,9 +97,7 @@ const Certificates = () => {
                     disableClearable
                     options={employees}
                     getOptionLabel={(option) => option.label}
-                    onChange={(event, newValue) => {
-                        setSelectedEmployee(newValue);
-                    }}
+                    onChange={(event, newValue) => setSelectedEmployee(newValue)}
                     renderInput={(params) => <TextField {...params} label="Select Employee" />}
                 />
             </Grid>
@@ -100,7 +105,7 @@ const Certificates = () => {
             {selectedEmployee && (
                 <Grid item xs={12}>
                     <Typography variant="h6">Select a Course to upload a Certificate for {selectedEmployee.label}</Typography>
-                    <Typography variant="body1">Upload one certificate at a time </Typography>
+                    <Typography variant="body1">Upload one certificate at a time</Typography>
 
                     {employeeCourses.length > 0 ? (
                         <List>

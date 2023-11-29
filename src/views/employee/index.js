@@ -24,7 +24,7 @@ const EmployeeAll = () => {
     const [employeeCertificates, setEmployeeCertificates] = useState([]);
 
     const fetchEmployees = useCallback((defaultEmployeeId) => {
-        const apiUrl = 'https://glowing-paradise-cfe00f2697.strapiapp.com/api/employees';
+        const apiUrl = `${process.env.REACT_APP_API_URL}/api/employees`;  // Use environment variable for API base URL
 
         fetch(apiUrl)
             .then((response) => response.json())
@@ -45,7 +45,8 @@ const EmployeeAll = () => {
     }, []);
 
     const fetchEmployeeCourses = useCallback(() => {
-        const apiUrl = `https://glowing-paradise-cfe00f2697.strapiapp.com/api/employee-courses?filters[employee][id][$eq]=${selectedEmployee.id}&populate[course]=name,shortname,datecompleted,YearsExpire`;
+        if (!selectedEmployee) return;
+        const apiUrl = `${process.env.REACT_APP_API_URL}/api/employee-courses?filters[employee][id][$eq]=${selectedEmployee.id}&populate[course]=name,shortname,datecompleted,YearsExpire`;
 
         fetch(apiUrl)
             .then((response) => response.json())
@@ -55,7 +56,8 @@ const EmployeeAll = () => {
     }, [selectedEmployee]);
 
     const fetchEmployeeCertificates = useCallback(() => {
-        const apiUrl = `https://glowing-paradise-cfe00f2697.strapiapp.com/api/certificates?populate=*&filters[employee][id][$eq]=${selectedEmployee.id}`;
+        if (!selectedEmployee) return;
+        const apiUrl = `${process.env.REACT_APP_API_URL}/api/certificates?populate=*&filters[employee][id][$eq]=${selectedEmployee.id}`;
 
         fetch(apiUrl)
             .then((response) => response.json())
@@ -88,7 +90,7 @@ const EmployeeAll = () => {
         if (completionDate && yearsExpire) {
             const expiryDate = new Date(completionDate);
             expiryDate.setFullYear(expiryDate.getFullYear() + yearsExpire);
-            return formatDate(expiryDate); // Use the formatDate function for consistent formatting
+            return formatDate(expiryDate);
         }
         return 'N/A';
     };

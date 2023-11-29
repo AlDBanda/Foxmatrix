@@ -24,7 +24,8 @@ const dashboard = {
             type: 'item',
             url: '/dashboard/default',
             icon: icons.IconDashboard,
-            breadcrumbs: false
+            breadcrumbs: false,
+            roles: ['admin'] // Only accessible by admins
         },
         {
             id: 'management',
@@ -32,7 +33,8 @@ const dashboard = {
             type: 'item',
             url: '/dashboard/analytics',
             icon: icons.IconDeviceAnalytics,
-            breadcrumbs: false
+            breadcrumbs: false,
+            roles: ['manager'] // Only accessible by managers
         },
         {
             id: 'training',
@@ -40,7 +42,8 @@ const dashboard = {
             type: 'item',
             url: '/dashboard/training/3',
             icon: icons.IconChartInfographic,
-            breadcrumbs: false
+            breadcrumbs: false,
+            roles: ['employee', 'manager', 'admin'] // Accessible by employees, managers, and admins
         }
     ]
 };

@@ -43,15 +43,35 @@ export const AWSCognitoProvider = ({ children }) => {
                 const serviceToken = window.localStorage.getItem('serviceToken');
                 if (serviceToken) {
                     setSession(serviceToken);
-                    dispatch({
-                        type: LOGIN,
-                        payload: {
-                            isLoggedIn: true,
-                            user: {
-                                name: 'Betty'
+                    const currentUser = userPool.getCurrentUser();
+                    if (currentUser) {
+                        currentUser.getSession((err) => {
+                            if (err) {
+                                dispatch({ type: LOGOUT });
+                            } else {
+                                currentUser.getUserAttributes((err, attributes) => {
+                                    if (err) {
+                                        dispatch({ type: LOGOUT });
+                                    } else {
+                                        // Fetch role from user attributes or via API
+                                        const roleAttribute = attributes.find((attr) => attr.Name === 'custom:role');
+                                        const role = roleAttribute ? roleAttribute.Value : 'User'; // Default role if not found
+
+                                        dispatch({
+                                            type: LOGIN,
+                                            payload: {
+                                                isLoggedIn: true,
+                                                user: {
+                                                    name: currentUser.getUsername(),
+                                                    role: role
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
                             }
-                        }
-                    });
+                        });
+                    }
                 } else {
                     dispatch({
                         type: LOGOUT
@@ -83,29 +103,30 @@ export const AWSCognitoProvider = ({ children }) => {
             onSuccess: (session) => {
                 setSession(session.getAccessToken().getJwtToken());
 
-                dispatch({
-                    type: LOGIN,
-                    payload: {
-                        isLoggedIn: true,
-                        user: {
-                            email: authData.getUsername(),
-                            name: 'John Doe'
-                        }
+                usr.getUserAttributes((err, attributes) => {
+                    if (err) {
+                        dispatch({ type: LOGOUT });
+                    } else {
+                        // Fetch role from user attributes
+                        const roleAttribute = attributes.find((attr) => attr.Name === 'custom:role');
+                        const role = roleAttribute ? roleAttribute.Value : 'User'; // Default role if not found
+
+                        dispatch({
+                            type: LOGIN,
+                            payload: {
+                                isLoggedIn: true,
+                                user: {
+                                    email: authData.getUsername(),
+                                    name: 'John Doe',
+                                    role: role
+                                }
+                            }
+                        });
                     }
                 });
             },
             onFailure: () => {},
-            newPasswordRequired: () => {
-                // // User was signed up by an admin and must provide new
-                // // password and required attributes, if any, to complete
-                // // authentication.
-                // // the api doesn't accept this field back
-                // delete userAttributes.email_verified;
-                // // unsure about this field, but I don't send this back
-                // delete userAttributes.phone_number_verified;
-                // // Get these details and call
-                // usr.completeNewPasswordChallenge(password, userAttributes, requiredAttributes);
-            }
+            newPasswordRequired: () => {}
         });
     };
 
@@ -116,7 +137,8 @@ export const AWSCognitoProvider = ({ children }) => {
                 password,
                 [
                     new CognitoUserAttribute({ Name: 'email', Value: email }),
-                    new CognitoUserAttribute({ Name: 'name', Value: `${firstName} ${lastName}` })
+                    new CognitoUserAttribute({ Name: 'name', Value: `${firstName} ${lastName}` }),
+                    new CognitoUserAttribute({ Name: 'custom:role', Value: 'User' }) // Default role on registration
                 ],
                 [],
                 async (err, result) => {

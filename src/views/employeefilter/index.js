@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
 import {
     Autocomplete,
     Grid,
@@ -32,10 +32,17 @@ const EmployeeFilter = () => {
     const [branches, setBranches] = useState([]);
     const [selectedBranch, setSelectedBranch] = useState(null);
 
-    const fetchCompanies = useCallback(() => {
-        const apiUrl = 'https://glowing-paradise-cfe00f2697.strapiapp.com/api/companies';
+    const API_URL = 'http://localhost:1337/api'; // Localhost URL
+    const BEARER_TOKEN ='abae5c5bbc3ab787e7538ac265978d265404bd7160dec53eba35895fe8f5d3b1af62fef2ef0715a2d9b6e569cf7cd42a47b5459dd7925223bc0f4bcc23555ea01d5e22bdfde1b021502c25f43c8d872c8f7dd9950a5e4cefcca811be1c395072ad4aebfe4bd449c2e314e83ac860b90d1f21ae877073de01deb6f97a752a64b2';
 
-        fetch(apiUrl)
+    const fetchCompanies = useCallback(() => {
+        const apiUrl = `${API_URL}/companies`;
+
+        fetch(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${BEARER_TOKEN}`
+            }
+        })
             .then((response) => response.json())
             .then((data) => {
                 const formattedCompanies = data.data.map((company) => ({
@@ -47,9 +54,13 @@ const EmployeeFilter = () => {
     }, []);
 
     const fetchSkills = useCallback(() => {
-        const apiUrl = 'https://glowing-paradise-cfe00f2697.strapiapp.com/api/skills';
+        const apiUrl = `${API_URL}/skills`;
 
-        fetch(apiUrl)
+        fetch(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${BEARER_TOKEN}`
+            }
+        })
             .then((response) => response.json())
             .then((data) => {
                 const formattedSkills = data.data.map((skill) => ({
@@ -61,9 +72,13 @@ const EmployeeFilter = () => {
     }, []);
 
     const fetchBranches = useCallback(() => {
-        const apiUrl = 'https://glowing-paradise-cfe00f2697.strapiapp.com/api/employees?fields[0]=CompanyBranch';
+        const apiUrl = `${API_URL}/employees?fields[0]=CompanyBranch`;
 
-        fetch(apiUrl)
+        fetch(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${BEARER_TOKEN}`
+            }
+        })
             .then((response) => response.json())
             .then((data) => {
                 const formattedBranches = [...new Set(data.data.map((employee) => employee.attributes.CompanyBranch))].map((branch) => ({
@@ -75,7 +90,7 @@ const EmployeeFilter = () => {
     }, []);
 
     const fetchEmployees = useCallback(() => {
-        let apiUrl = 'https://glowing-paradise-cfe00f2697.strapiapp.com/api/employees';
+        let apiUrl = `${API_URL}/employees`;
 
         let filters = [];
 
@@ -95,7 +110,11 @@ const EmployeeFilter = () => {
             apiUrl += `?${filters.join('&')}`;
         }
 
-        fetch(apiUrl)
+        fetch(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${BEARER_TOKEN}`
+            }
+        })
             .then((response) => response.json())
             .then((data) => {
                 const formattedEmployees = data.data.map((employee) => ({
@@ -108,9 +127,13 @@ const EmployeeFilter = () => {
     }, [selectedCompany, selectedSkill, selectedBranch]);
 
     const fetchEmployeeCourses = useCallback(() => {
-        const apiUrl = `https://glowing-paradise-cfe00f2697.strapiapp.com/api/employee-courses?filters[employee][id][$eq]=${selectedEmployee.id}&populate[course]=name,shortname,datecompleted,YearsExpire`;
+        const apiUrl = `${API_URL}/employee-courses?filters[employee][id][$eq]=${selectedEmployee.id}&populate[course]=name,shortname,datecompleted,YearsExpire`;
 
-        fetch(apiUrl)
+        fetch(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${BEARER_TOKEN}`
+            }
+        })
             .then((response) => response.json())
             .then((data) => {
                 setEmployeeCourses(data.data);
@@ -118,9 +141,13 @@ const EmployeeFilter = () => {
     }, [selectedEmployee]);
 
     const fetchEmployeeCertificates = useCallback(() => {
-        const apiUrl = `https://glowing-paradise-cfe00f2697.strapiapp.com/api/certificates?populate=*&filters[employee][id][$eq]=${selectedEmployee.id}`;
+        const apiUrl = `${API_URL}/certificates?populate=*&filters[employee][id][$eq]=${selectedEmployee.id}`;
 
-        fetch(apiUrl)
+        fetch(apiUrl, {
+            headers: {
+                Authorization: `Bearer ${BEARER_TOKEN}`
+            }
+        })
             .then((response) => response.json())
             .then((data) => {
                 setEmployeeCertificates(data.data);
@@ -214,7 +241,6 @@ const EmployeeFilter = () => {
         doc.text(`Completed Courses for ${selectedEmployee.fullname}`, 14, 15);
         doc.save(`completed_courses_${selectedEmployee.fullname}.pdf`);
     };
-
     return (
         <MainCard title="Courses Completed Per Employee">
             <Grid container spacing={gridSpacing}>

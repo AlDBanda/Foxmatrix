@@ -43,13 +43,18 @@ export const Auth0Provider = ({ children }) => {
                 if (isLoggedIn) {
                     const user = await auth0Client.getUser();
 
+                    // Fetch the user role from your backend API or Auth0
+                    const role = await fetchUserRole(user?.sub); // This should be implemented to fetch the role
+
                     dispatch({
                         type: LOGIN,
                         payload: {
                             isLoggedIn: true,
                             user: {
                                 id: user?.sub,
-                                email: user?.email
+                                email: user?.email,
+                                name: user?.name,
+                                role: role // Store the role in the state
                             }
                         }
                     });
@@ -68,12 +73,21 @@ export const Auth0Provider = ({ children }) => {
         init();
     }, []);
 
+    const fetchUserRole = async (userId) => {
+        // Implement this function to fetch the user's role from your backend API or another source
+        // This is just a placeholder for the logic you would use to get the role
+        const response = await fetch(`/api/users/${userId}/role`);
+        const data = await response.json();
+        return data.role; // Assuming the role is returned in this structure
+    };
+
     const login = async (options) => {
         await auth0Client.loginWithPopup(options);
         const isLoggedIn = await auth0Client.isAuthenticated();
 
         if (isLoggedIn) {
             const user = await auth0Client.getUser();
+            const role = await fetchUserRole(user?.sub); // Fetch the role after login
             dispatch({
                 type: LOGIN,
                 payload: {
@@ -83,6 +97,7 @@ export const Auth0Provider = ({ children }) => {
                         avatar: user?.picture,
                         email: user?.email,
                         name: user?.name,
+                        role: role, // Store the role in the state
                         tier: 'Premium'
                     }
                 }
@@ -106,7 +121,11 @@ export const Auth0Provider = ({ children }) => {
         return <Loader />;
     }
 
-    return <Auth0Context.Provider value={{ ...state, login, logout, resetPassword, updateProfile }}>{children}</Auth0Context.Provider>;
+    return (
+        <Auth0Context.Provider value={{ ...state, login, logout, resetPassword, updateProfile }}>
+            {children}
+        </Auth0Context.Provider>
+    );
 };
 
 Auth0Provider.propTypes = {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Grid, List, ListItem, ListItemText, Typography, IconButton, ListItemSecondaryAction, Button } from '@mui/material';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -25,7 +26,14 @@ const FoxSkills = () => {
         fetch(apiUrl)
             .then((response) => response.json())
             .then((data) => {
-                setCompanyName(data.data.attributes.name);
+                if (data && data.data && data.data.attributes) {
+                    setCompanyName(data.data.attributes.name);
+                } else {
+                    console.error("Company data is null or missing attributes.");
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching company details:", error);
             });
     }, [companyId]);
 
@@ -35,7 +43,14 @@ const FoxSkills = () => {
         fetch(apiUrl)
             .then((response) => response.json())
             .then((data) => {
-                setSkillName(data.data.attributes.role);
+                if (data && data.data && data.data.attributes) {
+                    setSkillName(data.data.attributes.role);
+                } else {
+                    console.error("Skill data is null or missing attributes.");
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching skill details:", error);
             });
     }, [skillId]);
 
@@ -59,32 +74,57 @@ const FoxSkills = () => {
         fetch(apiUrl)
             .then((response) => response.json())
             .then((data) => {
-                const formattedEmployees = data.data.map((employee) => ({
-                    label: employee.attributes.fullname,
-                    id: employee.id,
-                    ...employee.attributes
-                }));
-                setEmployees(formattedEmployees);
+                if (data && data.data) {
+                    const formattedEmployees = data.data.map((employee) => ({
+                        label: employee.attributes?.fullname || 'Unknown',
+                        id: employee.id,
+                        ...employee.attributes
+                    }));
+                    setEmployees(formattedEmployees);
+                } else {
+                    console.error("Employee data is null or missing attributes.");
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching employees:", error);
             });
     }, [companyId, skillId]);
 
     const fetchEmployeeCourses = useCallback(() => {
+        if (!selectedEmployee || !selectedEmployee.id) return;
+
         const apiUrl = `https://glowing-paradise-cfe00f2697.strapiapp.com/api/employee-courses?filters[employee][id][$eq]=${selectedEmployee.id}&populate[course]=name,shortname,datecompleted,YearsExpire`;
 
         fetch(apiUrl)
             .then((response) => response.json())
             .then((data) => {
-                setEmployeeCourses(data.data);
+                if (data && data.data) {
+                    setEmployeeCourses(data.data);
+                } else {
+                    console.error("Employee courses data is null or missing.");
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching employee courses:", error);
             });
     }, [selectedEmployee]);
 
     const fetchEmployeeCertificates = useCallback(() => {
+        if (!selectedEmployee || !selectedEmployee.id) return;
+
         const apiUrl = `https://glowing-paradise-cfe00f2697.strapiapp.com/api/certificates?populate=*&filters[employee][id][$eq]=${selectedEmployee.id}`;
 
         fetch(apiUrl)
             .then((response) => response.json())
             .then((data) => {
-                setEmployeeCertificates(data.data);
+                if (data && data.data) {
+                    setEmployeeCertificates(data.data);
+                } else {
+                    console.error("Employee certificates data is null or missing.");
+                }
+            })
+            .catch((error) => {
+                console.error("Error fetching employee certificates:", error);
             });
     }, [selectedEmployee]);
 
@@ -137,11 +177,11 @@ const FoxSkills = () => {
 
     const handleCertificateClick = (employeeCourse) => {
         const certificate = employeeCertificates.find(
-            (certificate) => certificate.attributes.course.data.id === employeeCourse.attributes.course.data.id
+            (certificate) => certificate.attributes?.course?.data?.id === employeeCourse.attributes?.course?.data?.id
         );
 
         if (certificate) {
-            window.open(certificate.attributes.certificate.data.attributes.url, '_blank');
+            window.open(certificate.attributes?.certificate?.data?.attributes?.url, '_blank');
         }
     };
 
@@ -151,17 +191,24 @@ const FoxSkills = () => {
         const tableRows = [];
 
         employeeCourses.forEach((employeeCourse) => {
-            const completionDate = employeeCourse.attributes.DateCompleted;
+            const completionDate = employeeCourse.attributes?.DateCompleted;
             const formattedCompletionDate = completionDate ? formatDate(completionDate) : 'Not yet completed';
-            const expiryDate = calculateExpiryDate(completionDate, employeeCourse.attributes.course.data.attributes.YearsExpire);
+            const expiryDate = calculateExpiryDate(
+                completionDate,
+                employeeCourse.attributes?.course?.data?.attributes?.YearsExpire
+            );
 
-            const courseData = [employeeCourse.attributes.course.data.attributes.name, formattedCompletionDate, expiryDate];
+            const courseData = [
+                employeeCourse.attributes?.course?.data?.attributes?.name || 'Unknown',
+                formattedCompletionDate,
+                expiryDate
+            ];
             tableRows.push(courseData);
         });
 
         doc.autoTable(tableColumn, tableRows, { startY: 20 });
-        doc.text(`Completed Courses for ${selectedEmployee.fullname}`, 14, 15);
-        doc.save(`completed_courses_${selectedEmployee.fullname}.pdf`);
+        doc.text(`Completed Courses for ${selectedEmployee?.fullname || 'Unknown'}`, 14, 15);
+        doc.save(`completed_courses_${selectedEmployee?.fullname || 'unknown'}.pdf`);
     };
 
     return (
